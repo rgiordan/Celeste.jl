@@ -163,6 +163,9 @@ function test_dual_numbers()
   blob, mp, body, tiled_blob = gen_sample_star_dataset();
   mp_dual = CelesteTypes.forward_diff_model_params(DualNumbers.Dual{Float64}, mp);
   elbo_dual = ElboDeriv.elbo_likelihood(tiled_blob, mp_dual);
+
+  # Just to keep from accidentally printing big SensitiveFloats.
+  return(true)
 end
 
 
@@ -414,7 +417,7 @@ function test_e_g_s_functions()
   s = 1
 
   for test_var = [false, true], b=1:5
-    test_var_string = test_var ? "E_G" : "var_G"
+    test_var_string = test_var ? "var_G" : "E_G"
     println("Testing $(test_var_string), band $b")
 
     tile = tiled_blob[b][1,1]; # Note: only one tile in this simulated dataset.
@@ -450,12 +453,14 @@ function test_e_g_s_functions()
 
     elbo_vars = e_g_wrapper_fun(mp);
 
-    # Sanity check the variance value.
-    @test_approx_eq(elbo_vars.var_G_s.v,
-                    elbo_vars.E_G2_s.v - (elbo_vars.E_G_s.v ^ 2))
-
     sf = test_var ? deepcopy(elbo_vars.var_G_s) : deepcopy(elbo_vars.E_G_s);
 
+    fun = wrapper_fun
+    ad_grad = ForwardDiff.gradient(fun, x);
+    ad_hess = ForwardDiff.hessian(fun, x);
+
+    print(fun(x), " ", sf.v)
+    print(hcat(ad_grad, elbo_vars.var_G_s.d[:,1]))
     test_with_autodiff(wrapper_fun, x, sf)
   end
 end
@@ -891,7 +896,7 @@ function test_brightness_hessian()
   i = 1
 
   for squares in [false, true], b in 1:5, i in 1:2
-    squares_string = squares ? "E_G" : "E_G2"
+    squares_string = squares ? "E_l_a" : "E_ll_a"
     println("Testing brightness $(squares_string) for band $b, type $i")
     function wrap_source_brightness{NumType <: Number}(
         vp::Vector{NumType}, calculate_derivs::Bool)
