@@ -628,10 +628,12 @@ function accumulate_source_brightness!{NumType <: Number}(
         end
         var_G_s.h[ids.a[i], p0_shape] = var_G_s.h[p0_shape, ids.a[i]]'
 
-        # TODO: it is no longer necessary to use these submatrices.
+        # TODO: Broken!  The reason is that you need to add the E_G_squared
+        # contribution even to indices that have zero hessian in E_G2.
+
+        # The bright, shape block.
         for ind_b in 1:length(p0_bright), ind_s in 1:length(p0_shape)
-          var_G_s.h[p0_bright[ind_b], p0_shape[ind_s]]
-          #var_G_s_hsub.bright_shape[ind_b, ind_s] =
+          var_G_s.h[p0_bright[ind_b], p0_shape[ind_s]] =
             2 * a[i] * sb.E_ll_a[b, i].d[ind_b, 1] * fsm[i].v * fsm[i].d[ind_s] +
           E_G_squared_hessian_term(p0_bright[ind_b], p0_shape[ind_s])
         end
