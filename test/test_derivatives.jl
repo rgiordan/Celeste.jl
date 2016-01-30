@@ -460,7 +460,9 @@ function test_e_g_s_functions()
     ad_hess = ForwardDiff.hessian(fun, x);
 
     print(fun(x), " ", sf.v)
-    print(hcat(ad_grad, elbo_vars.var_G_s.d[:,1]))
+    #using PyPlot
+    matshow(abs(ad_hess - sf.h) .> 1e-10)
+    #matshow(abs(ad_hess) .> 1e-10)
     test_with_autodiff(wrapper_fun, x, sf)
   end
 end

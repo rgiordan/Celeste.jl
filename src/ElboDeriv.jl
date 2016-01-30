@@ -531,6 +531,11 @@ function accumulate_source_brightness!{NumType <: Number}(
   end
 
 
+  # Get the contribution of the hessian of var_G_s from the E[G]^2 term.
+  function E_G_squared_hessian_term(ind1::Int64, ind2::Int64)
+    -2 * (E_G_s.d[ind1] * E_G_s.d[ind2] + E_G_s.v * E_G_s.h[ind1, ind2])
+  end
+
   # Next, calculate var_G_s using E_G_s.
   for i in 1:Ia # Stars and galaxies
 
@@ -568,11 +573,6 @@ function accumulate_source_brightness!{NumType <: Number}(
         ######################
         # Hessians.
 
-        # Get the contribution of the hessian of var_G_s from the E[G]^2 term.
-        function E_G_squared_hessian_term(ind1::Int64, ind2::Int64)
-          -2 * (E_G_s.d[ind1] * E_G_s.d[ind2] + E_G_s.v * E_G_s.h[ind1, ind2])
-        end
-
         # Data structures to accumulate certain submatrices of the Hessian.
         var_G_s_hsub = elbo_vars.var_G_s_hsub_vec[i];
 
@@ -581,9 +581,11 @@ function accumulate_source_brightness!{NumType <: Number}(
         # The (bright, bright) block:
         for p0_ind1 in 1:length(p0_bright), p0_ind2 in 1:length(p0_bright)
           # TODO: time consuming **************
-          var_G_s.h[p0_bright[p0_ind1], p0_bright[p0_ind2]] =
-            a[i] * (fsm[i].v^2) * sb.E_ll_a[b, i].h[p0_ind1, p0_ind2] +
-            E_G_squared_hessian_term(p0_bright[p0_ind1], p0_bright[p0_ind2])
+          ind1 = p0_bright[p0_ind1]
+          ind2 = p0_bright[p0_ind2]
+          var_G_s.h[ind1, ind2] =
+            a[i] * (fsm[i].v^2) * sb.E_ll_a[b, i].h[p0_ind1, p0_ind2] -
+            2 * (E_G_s.d[ind1] * E_G_s.d[ind2] + E_G_s.v * E_G_s.h[ind1, ind2])
         end
 
         # The (shape, shape) block stored in a temporary variable:
@@ -640,24 +642,26 @@ function accumulate_source_brightness!{NumType <: Number}(
   end # i loop
 
   # Subtract the part of the derivative from the E[G]^2 term.
-  var_G_s.v +=  -(E_G_s.v ^ 2)
-  var_G_s.d += -2 * E_G_s.v * E_G_s.d
+  var_G_s.v -=  (E_G_s.v ^ 2)
 
-  if elbo_vars.calculate_hessian
-    # Accumulate the u Hessian.  u is the only parameter that is shared between
-    # different values of i.
+  if elbo_vars.calculate_derivs
+    var_G_s.d += -2 * E_G_s.v * E_G_s.d
 
-    E_G_term =
-      NumType[ E_G_squared_hessian_term[iu1, iu2] for iu1 in ids.u, iu2 in ids.u ]
-    # For each value in 1:Ia, written this way for speed.
-    @assert Ia == 2
-    var_G_s.h[ids.u, ids.u] =
-      elbo_vars.var_G_s_hsub_vec[1].u_u +
-      elbo_vars.var_G_s_hsub_vec[2].u_u +
-      E_G_term
+    if elbo_vars.calculate_hessian
+      # Accumulate the u Hessian.  u is the only parameter that is shared between
+      # different values of i.
 
+      E_G_term =
+        NumType[ E_G_squared_hessian_term(iu1, iu2) for iu1 in ids.u, iu2 in ids.u ]
+      # For each value in 1:Ia, written this way for speed.
+      @assert Ia == 2
+      var_G_s.h[ids.u, ids.u] =
+        elbo_vars.var_G_s_hsub_vec[1].u_u +
+        elbo_vars.var_G_s_hsub_vec[2].u_u +
+        E_G_term
+
+    end
   end
-
   #calculate_var_G_s!(elbo_vars, active_source)
 end
 
