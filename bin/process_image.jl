@@ -74,6 +74,10 @@ for s in sources
   end
 
   transform = Transform.get_mp_transform(mp_s);
+
+  # TODO: This is slow but would run much faster if you had run
+  # limit_to_object_data() first.  Currently that requires the original
+  # blob which cannot be saved to an HDF5 file.
   trimmed_tiled_blob =
     ModelInit.trim_source_tiles(s, mp_s, tiled_blob, noise_fraction=0.1);
   #imshow(stitch_object_tiles(s, b, mp, trimmed_tiled_blob))
@@ -94,8 +98,10 @@ end
 println("All done!")
 
 
-if false
 
+
+if false
+  ###################################
   # Some code to interactively explore the results.
   [ sum([ s in tile for tile in mp.tile_sources[b]]) for b in 1:5]
   [ sum([ s in tile for tile in mp_s.tile_sources[b]]) for b in 1:5]
