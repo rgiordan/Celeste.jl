@@ -98,40 +98,44 @@ function test_real_image()
 
   # Pick an object.
   objid = "1237662226208063499"
-  s_original = findfirst(mp.objids .== objid)
-  mp.active_sources = [ s_original ]
+  trimmed_mp, trimmed_tiled_blob = ModelInit.limit_to_object_data(
+    objid, mp, tiled_blob, blob, cat_entries);
 
-  # Get the sources that overlap with this object.
-  relevant_sources = Int64[]
-  for b = 1:5, tile_sources in mp.tile_sources[b]
-    if length(intersect(mp.active_sources, tile_sources)) > 0
-      println("Found sources in band $b: ", tile_sources)
-      relevant_sources = union(relevant_sources, tile_sources);
-    end
-  end
-
-  trimmed_mp = ModelInit.initialize_model_params(
-    tiled_blob, blob, cat_entries[relevant_sources], fit_psf=true);
-  original_tiled_sources = deepcopy(trimmed_mp.tile_sources);
-
-  s = findfirst(trimmed_mp.objids .== objid)
-  trimmed_mp.active_sources = [ s ]
-
-  # Trim to a smaller tiled blob.
-  trimmed_tiled_blob = Array(Array{ImageTile}, 5);
-  for b=1:5
-    hh_vec, ww_vec = ind2sub(size(original_tiled_sources[b]),
-      find([ s in sources for sources in original_tiled_sources[b]]))
-
-    hh_range = minimum(hh_vec):maximum(hh_vec);
-    ww_range = minimum(ww_vec):maximum(ww_vec);
-    trimmed_tiled_blob[b] = tiled_blob[b][hh_range, ww_range];
-    trimmed_mp.tile_sources[b] =
-      deepcopy(original_tiled_sources[b][hh_range, ww_range]);
-  end
-  trimmed_tiled_blob = convert(TiledBlob, trimmed_tiled_blob);
+  # s_original = findfirst(mp.objids .== objid)
+  # mp.active_sources = [ s_original ]
+  #
+  # # Get the sources that overlap with this object.
+  # relevant_sources = Int64[]
+  # for b = 1:5, tile_sources in mp.tile_sources[b]
+  #   if length(intersect(mp.active_sources, tile_sources)) > 0
+  #     println("Found sources in band $b: ", tile_sources)
+  #     relevant_sources = union(relevant_sources, tile_sources);
+  #   end
+  # end
+  #
+  # trimmed_mp = ModelInit.initialize_model_params(
+  #   tiled_blob, blob, cat_entries[relevant_sources], fit_psf=true);
+  # original_tiled_sources = deepcopy(trimmed_mp.tile_sources);
+  #
+  # s = findfirst(trimmed_mp.objids .== objid)
+  # trimmed_mp.active_sources = [ s ]
+  #
+  # # Trim to a smaller tiled blob.
+  # trimmed_tiled_blob = Array(Array{ImageTile}, 5);
+  # for b=1:5
+  #   hh_vec, ww_vec = ind2sub(size(original_tiled_sources[b]),
+  #     find([ s in sources for sources in original_tiled_sources[b]]))
+  #
+  #   hh_range = minimum(hh_vec):maximum(hh_vec);
+  #   ww_range = minimum(ww_vec):maximum(ww_vec);
+  #   trimmed_tiled_blob[b] = tiled_blob[b][hh_range, ww_range];
+  #   trimmed_mp.tile_sources[b] =
+  #     deepcopy(original_tiled_sources[b][hh_range, ww_range]);
+  # end
+  # trimmed_tiled_blob = convert(TiledBlob, trimmed_tiled_blob);
 
   # Limit to very few pixels so that the autodiff is reasonably fast.
+  s = trimmed_mp.active_sources[1]
   very_trimmed_tiled_blob = ModelInit.trim_source_tiles(
     s, trimmed_mp, trimmed_tiled_blob, noise_fraction=10.);
 

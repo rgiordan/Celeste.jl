@@ -5,6 +5,7 @@ println(versioninfo())
 using Celeste
 using ArgParse
 using Compat
+using CelesteTypes
 
 const dat_dir = joinpath(Pkg.dir("Celeste"), "dat")
 
@@ -50,6 +51,8 @@ mp = deepcopy(original_mp);
 @assert minimum(sources) >= 1
 source = unique(sources)
 
+# Set this to determine which parameters are estimated.  An empty array
+# optimizes all parameters.
 omitted_ids = Int64[]
 
 analysis_name = "iters_20"
@@ -92,7 +95,8 @@ println("All done!")
 
 
 if false
-  # Stuff for interactive exploration
+
+  # Some code to interactively explore the results.
   [ sum([ s in tile for tile in mp.tile_sources[b]]) for b in 1:5]
   [ sum([ s in tile for tile in mp_s.tile_sources[b]]) for b in 1:5]
 
