@@ -6,6 +6,8 @@ using Celeste
 using ArgParse
 using Compat
 
+const dat_dir = joinpath(Pkg.dir("Celeste"), "dat")
+
 # Command line arguments
 s = ArgParseSettings()
 @add_arg_table s begin
@@ -15,7 +17,7 @@ s = ArgParseSettings()
         default = "[1]"
     "--image_file"
         help = "The image JLD file"
-        default = "stripe82_fields/initialzed_celeste_000211_4_0227_20px.JLD"
+        default = "initialzed_celeste_000211_4_0227_20px.jld"
 end
 
 parsed_args = parse_args(s)
@@ -24,9 +26,10 @@ eval(parse(string("sources = Int64", parsed_args["sources"])))
 
 frame_jld_file = parsed_args["image_file"]
 
-include(joinpath(Pkg.dir("Celeste"), "src/CelesteCluster.jl"))
-sim_S = 20
+# To simulate, set synthetic = true, and sim_S to the number of bodies
+# to simulate.
 synthetic = false
+sim_S = 20
 
 println("Loading data with sources = $(sources).")
 
@@ -78,7 +81,7 @@ for s in sources
                             verbose=true, max_iters=max_iters);
   fit_time = time() - fit_time
 
-  JLD.save("$dat_dir/elbo_fit_$(analysis_name)_s$(s)_$(time()).JLD",
+  JLD.save("$dat_dir/elbo_fit_$(analysis_name)_s$(s)_$(time()).jld",
            @compat(Dict("vp[s]" => mp_s.vp[s],
                         "s" => s,
                         "result" => result,

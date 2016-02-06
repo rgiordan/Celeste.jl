@@ -27,11 +27,11 @@ cat_entries = SkyImages.convert_catalog_to_celeste(cat_df, blob);
 # TODO: change fit_psf to true when you're sure it works.
 tiled_blob, mp_all =
   ModelInit.initialize_celeste(blob, cat_entries,
-    tile_width=tile_width, fit_psf=true);
+    tile_width=tile_width, fit_psf=false);
 
 # The blob cannot be saved because it has a pointer to a C++ object.
 JLD.save(string("$dat_dir/initialzed_celeste_",
-                "$(run_num)_$(camcol_num)_$(field_num)_$(tile_width)px.JLD"),
+                "$(run_num)_$(camcol_num)_$(field_num)_$(tile_width)px.jld"),
          Dict("tiled_blob" => tiled_blob,
               "mp_all" => mp_all,
               "cat_df" => cat_df,
